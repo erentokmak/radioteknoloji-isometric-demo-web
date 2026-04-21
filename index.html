@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>radioteknoloji-isometric-demo</title>
+    <meta name="description" content="Radio Teknoloji - Smart City Signal Tower Demo. Interactive isometric 3D visualization.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #060810;
+            color: #eaeaff;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #unity-container {
+            position: absolute;
+            inset: 0;
+            background: #060810;
+        }
+
+        #unity-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #060810;
+            outline: none;
+        }
+
+        /* ── Loading Overlay ──────────────────────────────── */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #060810;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        #loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #loading-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        .loading-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .logo-mark {
+            width: 4px;
+            height: 48px;
+            background: #00E5A0;
+            margin: 0 auto 24px;
+            box-shadow: 0 0 20px rgba(0,229,160,0.3);
+        }
+
+        .loading-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: rgba(234,234,255,0.6);
+            margin-bottom: 8px;
+        }
+
+        .loading-subtitle {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(115,122,140,0.8);
+            margin-bottom: 48px;
+        }
+
+        .progress-container { width: 280px; margin: 0 auto; }
+
+        .progress-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00E5A0, #00B8D4);
+            border-radius: 1px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 12px rgba(0,229,160,0.4);
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(115,122,140,0.6);
+        }
+
+        .progress-percent { color: #00E5A0; font-weight: 600; }
+
+        .status-line {
+            margin-top: 40px;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(115,122,140,0.4);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00E5A0;
+            margin-right: 8px;
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; box-shadow: 0 0 8px rgba(0,229,160,0.5); }
+        }
+
+        #fullscreen-btn {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            z-index: 100;
+            width: 36px;
+            height: 36px;
+            background: rgba(10,15,20,0.8);
+            border: 1px solid rgba(0,229,160,0.15);
+            border-radius: 4px;
+            color: rgba(0,229,160,0.6);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        #fullscreen-btn:hover {
+            background: rgba(0,229,160,0.1);
+            border-color: rgba(0,229,160,0.3);
+            color: #00E5A0;
+        }
+
+        #unity-warning { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="loading-content">
+            <div class="logo-mark"></div>
+            <div class="loading-title">RADIO TEKNOLOJI</div>
+            <div class="loading-subtitle">Smart City Signal Demo</div>
+            <div class="progress-container">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span>LOADING</span>
+                    <span class="progress-percent" id="progress-percent">0%</span>
+                </div>
+            </div>
+            <div class="status-line">
+                <span class="status-dot"></span>INITIALIZING SYSTEMS
+            </div>
+        </div>
+    </div>
+
+    <!-- Unity Container -->
+    <div id="unity-container">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <!-- Fullscreen Button -->
+    <button id="fullscreen-btn" title="Fullscreen">&#x26F6;</button>
+
+    <div id="unity-warning"></div>
+
+    <script>
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/WebGL-Build.loader.js";
+        var config = {
+            dataUrl: buildUrl + "/WebGL-Build.data",
+            frameworkUrl: buildUrl + "/WebGL-Build.framework.js",
+            codeUrl: buildUrl + "/WebGL-Build.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "DefaultCompany",
+            productName: "radioteknoloji-isometric-demo",
+            productVersion: "0.1.0",
+        };
+
+        var canvas = document.querySelector("#unity-canvas");
+        var progressFill = document.getElementById("progress-fill");
+        var progressPercent = document.getElementById("progress-percent");
+        var loadingOverlay = document.getElementById("loading-overlay");
+
+        // ── Prevent browser from stealing Unity inputs ──────────────
+        // Scroll wheel → Unity zoom (prevent page scroll)
+        canvas.addEventListener("wheel", function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Right-click → Unity pan (prevent context menu)
+        canvas.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+        });
+
+        // Middle-click → Unity orbit (prevent auto-scroll)
+        canvas.addEventListener("mousedown", function(e) {
+            if (e.button === 1) e.preventDefault(); // middle click
+        });
+
+        // Prevent keyboard shortcuts (WASD, Q, E, arrows) from scrolling page
+        canvas.addEventListener("keydown", function(e) {
+            var keys = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
+                        "Space","Tab"];
+            if (keys.indexOf(e.code) !== -1) {
+                e.preventDefault();
+            }
+        });
+
+        // Keep canvas focused so keyboard input works
+        canvas.addEventListener("mouseenter", function() {
+            canvas.focus();
+        });
+        canvas.addEventListener("click", function() {
+            canvas.focus();
+        });
+
+        // Fullscreen
+        document.getElementById("fullscreen-btn").addEventListener("click", function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // ── Load Unity ──────────────────────────────────────────────
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = function() {
+            createUnityInstance(canvas, config, function(progress) {
+                var pct = Math.round(progress * 100);
+                progressFill.style.width = pct + "%";
+                progressPercent.textContent = pct + "%";
+            }).then(function(unityInstance) {
+                setTimeout(function() {
+                    loadingOverlay.classList.add("hidden");
+                }, 500);
+                // Focus canvas so keyboard works immediately
+                canvas.focus();
+            }).catch(function(message) {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
