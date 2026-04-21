@@ -1,10 +1,12 @@
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy WebGL build files
-COPY index.html /usr/share/nginx/html/
-COPY Build/ /usr/share/nginx/html/Build/
+WORKDIR /app
 
-# nginx config for proper MIME types and headers
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN npm install -g serve
 
-EXPOSE 80
+COPY index.html .
+COPY Build/ ./Build/
+
+EXPOSE 3000
+
+CMD ["serve", "-s", ".", "-l", "3000"]
